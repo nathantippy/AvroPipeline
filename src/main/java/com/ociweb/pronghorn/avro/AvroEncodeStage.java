@@ -6,12 +6,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 import org.apache.avro.Schema;
-import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Record;
-import org.apache.avro.generic.GenericDatumWriter;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
 
@@ -57,7 +51,7 @@ public class AvroEncodeStage extends PronghornStage {
 	    }
 	    
 	    @Override
-	    public void visitFragmentOpen(String name, long id) {
+	    public void visitFragmentOpen(String name, long id, int cursor) {
 	           try {
 	               encoder.startItem();
 	            } catch (IOException e) {
@@ -196,7 +190,7 @@ public class AvroEncodeStage extends PronghornStage {
 	
 	
 	protected AvroEncodeStage(GraphManager graphManager, RingBuffer input, RingBuffer output, File averoSchemaFile) {
-		super(graphManager, input, NONE);
+		super(graphManager, input, output);
 		this.input = input;
 		this.ouputStream = new RingOutputStream(output);
 

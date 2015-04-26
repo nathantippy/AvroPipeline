@@ -1,7 +1,5 @@
 package com.ociweb.pronghorn.avro;
 
-import java.util.Random;
-
 import com.ociweb.pronghorn.ring.RingBuffer;
 import com.ociweb.pronghorn.ring.stream.StreamingReadVisitor;
 import com.ociweb.pronghorn.ring.stream.StreamingVisitorReader;
@@ -9,20 +7,22 @@ import com.ociweb.pronghorn.stage.PronghornStage;
 import com.ociweb.pronghorn.stage.scheduling.GraphManager;
 
 public class TestValidator extends PronghornStage {
-
-    private final Random random;
-    private final RingBuffer input;
+    
+    private final RingBuffer expectedInput;
+    private final RingBuffer checkedInput;
+    
     private final StreamingVisitorReader reader;
     
-    public TestValidator(GraphManager gm, long seed, RingBuffer input) {
+    public TestValidator(GraphManager gm, RingBuffer ... input) {
         super(gm, input, NONE);
         
-        this.random = new Random(seed);
-        this.input = input;
+        this.expectedInput = input[0];
+        this.checkedInput = input[1];
         
-        StreamingReadVisitor visitor = null;
         
-        this.reader = new StreamingVisitorReader(input, visitor);
+        StreamingReadVisitor visitor = new MatchingReadVisitor(expectedInput);
+        
+        this.reader = new StreamingVisitorReader(checkedInput, visitor);
         
     }
 

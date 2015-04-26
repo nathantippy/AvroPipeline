@@ -8,13 +8,10 @@ import java.nio.ByteBuffer;
 import org.apache.avro.Schema;
 import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.EncoderFactory;
 
 import com.ociweb.pronghorn.ring.FieldReferenceOffsetManager;
 import com.ociweb.pronghorn.ring.RingBuffer;
 import com.ociweb.pronghorn.ring.stream.RingInputStream;
-import com.ociweb.pronghorn.ring.stream.StreamingReadVisitorAdapter;
-import com.ociweb.pronghorn.ring.stream.StreamingVisitorReader;
 import com.ociweb.pronghorn.ring.stream.StreamingVisitorWriter;
 import com.ociweb.pronghorn.ring.stream.StreamingWriteVisitor;
 import com.ociweb.pronghorn.stage.PronghornStage;

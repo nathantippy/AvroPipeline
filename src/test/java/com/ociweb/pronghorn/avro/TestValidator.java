@@ -2,6 +2,8 @@ package com.ociweb.pronghorn.avro;
 
 import com.ociweb.pronghorn.ring.RingBuffer;
 import com.ociweb.pronghorn.ring.stream.StreamingReadVisitor;
+import com.ociweb.pronghorn.ring.stream.StreamingReadVisitorDebugDelegate;
+import com.ociweb.pronghorn.ring.stream.StreamingReadVisitorMatcher;
 import com.ociweb.pronghorn.ring.stream.StreamingVisitorReader;
 import com.ociweb.pronghorn.stage.PronghornStage;
 import com.ociweb.pronghorn.stage.scheduling.GraphManager;
@@ -18,11 +20,10 @@ public class TestValidator extends PronghornStage {
         
         this.expectedInput = input[0];
         this.checkedInput = input[1];
+                
+        StreamingReadVisitor visitor = new StreamingReadVisitorMatcher(expectedInput);
         
-        
-        StreamingReadVisitor visitor = new MatchingReadVisitor(expectedInput);
-        
-        this.reader = new StreamingVisitorReader(checkedInput, visitor);
+        this.reader = new StreamingVisitorReader(checkedInput,  new StreamingReadVisitorDebugDelegate(visitor));////visitor);
         
     }
 

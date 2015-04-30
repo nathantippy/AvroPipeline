@@ -1,5 +1,7 @@
 package com.ociweb.pronghorn.avro;
 
+import static com.ociweb.pronghorn.ring.RingBufferConfig.pipe;
+import static com.ociweb.pronghorn.stage.scheduling.GraphManager.getOutputPipe;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -13,13 +15,9 @@ import org.xml.sax.SAXException;
 
 import com.ociweb.pronghorn.ring.FieldReferenceOffsetManager;
 import com.ociweb.pronghorn.ring.RingBufferConfig;
-import static com.ociweb.pronghorn.ring.RingBufferConfig.*;
 import com.ociweb.pronghorn.ring.loader.TemplateHandler;
 import com.ociweb.pronghorn.stage.PronghornStage;
-import com.ociweb.pronghorn.stage.route.SplitterStage;
 import com.ociweb.pronghorn.stage.scheduling.GraphManager;
-import static com.ociweb.pronghorn.stage.scheduling.GraphManager.*;
-
 import com.ociweb.pronghorn.stage.scheduling.StageScheduler;
 import com.ociweb.pronghorn.stage.scheduling.ThreadPerStageScheduler;
 
@@ -43,6 +41,7 @@ public class RoundTripTests {
         GraphManager gm = new GraphManager();
         
         int seed = 42;
+        int iterations = 10;
         
         /* Possible DSL for graph in groovy
          
@@ -50,11 +49,22 @@ public class RoundTripTests {
           
          */
                 
-        PronghornStage generator = new TestGenerator(gm, seed, pipe(busConfig));        
-        SplitterStage splitter = new SplitterStage(gm, getOutputPipe(gm, generator, 1), pipe(busConfig.grow2x()), pipe(busConfig.grow2x()));        
-        AvroEncodeStage encoder = new AvroEncodeStage(gm, getOutputPipe(gm, splitter, 1), pipe(rawConfig), avroSchemaFile );
-        AvroDecodeStage decoder = new AvroDecodeStage(gm, getOutputPipe(gm, encoder, 1), pipe(busConfig), avroSchemaFile );        
-        PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, splitter, 2), getOutputPipe(gm, decoder, 1));
+      //  PronghornStage generator = new TestGenerator(gm, seed, pipe(busConfig));        
+      //  SplitterStage splitter = new SplitterStage(gm, getOutputPipe(gm, generator, 1), pipe(busConfig.grow2x()), pipe(busConfig.grow2x()));        
+        
+     //   AvroEncodeStage encoder = new AvroEncodeStage(gm, getOutputPipe(gm, splitter, 1), pipe(rawConfig), avroSchemaFile );
+    //    AvroDecodeStage decoder = new AvroDecodeStage(gm, getOutputPipe(gm, encoder, 1), pipe(busConfig), avroSchemaFile );        
+        
+      //  PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, splitter, 2), getOutputPipe(gm, splitter, 1));
+        
+        
+        PronghornStage generator1 = new TestGenerator(gm, seed, iterations, pipe(busConfig));        
+        PronghornStage generator2 = new TestGenerator(gm, seed, iterations ,pipe(busConfig));        
+        
+        PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, generator1, 1), getOutputPipe(gm, generator2, 1));
+        
+        
+        
         
         //start the timer       
         final long start = System.currentTimeMillis();

@@ -5,6 +5,7 @@ import java.util.Random;
 import com.ociweb.pronghorn.ring.RingBuffer;
 import com.ociweb.pronghorn.ring.stream.StreamingVisitorWriter;
 import com.ociweb.pronghorn.ring.stream.StreamingWriteVisitor;
+import com.ociweb.pronghorn.ring.stream.StreamingWriteVisitorGenerator;
 import com.ociweb.pronghorn.stage.PronghornStage;
 import com.ociweb.pronghorn.stage.scheduling.GraphManager;
 
@@ -50,13 +51,13 @@ public class TestGenerator extends PronghornStage {
      */
     
     private final StreamingVisitorWriter writer;
-    private final RingBuffer output;
+    private int iterations;
     
-    public TestGenerator(GraphManager gm, long seed, RingBuffer output) {
+    public TestGenerator(GraphManager gm, long seed, int iterations, RingBuffer output) {
         super(gm, NONE, output);
         
-        this.output = output;
-        StreamingWriteVisitor visitor = new GeneratorWriterVisitor(RingBuffer.from(output), new Random(seed), 30, 30);        
+        this.iterations = iterations;
+        StreamingWriteVisitor visitor = new StreamingWriteVisitorGenerator(RingBuffer.from(output), new Random(seed), 30, 30);        
         this.writer = new StreamingVisitorWriter(output, visitor  );
         
     }
@@ -69,7 +70,11 @@ public class TestGenerator extends PronghornStage {
     
     @Override
     public void run() {
-        writer.run();
+        if (--iterations>0) {
+            writer.run();
+        } else {
+            requestShutdown();
+        }
     }
     
     @Override

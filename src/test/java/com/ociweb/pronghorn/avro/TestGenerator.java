@@ -12,7 +12,7 @@ import com.ociweb.pronghorn.stage.scheduling.GraphManager;
 public class TestGenerator extends PronghornStage {
 
     /*
-     * API Decision: (TODO: build table)
+     * API Decision: 
      *                Do not know the fields at compile time -> visitors or low level
      *                Only 1 message type -> Low level easier
      *                Specific business logic on fields -> High level perhaps visitor

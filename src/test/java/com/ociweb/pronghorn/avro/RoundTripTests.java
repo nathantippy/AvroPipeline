@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,9 +16,15 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import com.ociweb.pronghorn.ring.FieldReferenceOffsetManager;
+import com.ociweb.pronghorn.ring.RingBuffer;
 import com.ociweb.pronghorn.ring.RingBufferConfig;
 import com.ociweb.pronghorn.ring.loader.TemplateHandler;
+import com.ociweb.pronghorn.ring.stream.StreamingReadVisitorMatcher;
+import com.ociweb.pronghorn.ring.stream.StreamingVisitorReader;
+import com.ociweb.pronghorn.ring.stream.StreamingVisitorWriter;
+import com.ociweb.pronghorn.ring.stream.StreamingWriteVisitorGenerator;
 import com.ociweb.pronghorn.stage.PronghornStage;
+import com.ociweb.pronghorn.stage.route.SplitterStage;
 import com.ociweb.pronghorn.stage.scheduling.GraphManager;
 import com.ociweb.pronghorn.stage.scheduling.StageScheduler;
 import com.ociweb.pronghorn.stage.scheduling.ThreadPerStageScheduler;
@@ -49,19 +57,26 @@ public class RoundTripTests {
           
          */
                 
-      //  PronghornStage generator = new TestGenerator(gm, seed, pipe(busConfig));        
-      //  SplitterStage splitter = new SplitterStage(gm, getOutputPipe(gm, generator, 1), pipe(busConfig.grow2x()), pipe(busConfig.grow2x()));        
+        PronghornStage generator = new TestGenerator(gm, seed, iterations, pipe(busConfig));        
+        SplitterStage splitter = new SplitterStage(gm, getOutputPipe(gm, generator, 1), pipe(busConfig.grow2x()), pipe(busConfig.grow2x()));        
         
-     //   AvroEncodeStage encoder = new AvroEncodeStage(gm, getOutputPipe(gm, splitter, 1), pipe(rawConfig), avroSchemaFile );
-    //    AvroDecodeStage decoder = new AvroDecodeStage(gm, getOutputPipe(gm, encoder, 1), pipe(busConfig), avroSchemaFile );        
+        AvroEncodeStage encoder = new AvroEncodeStage(gm, getOutputPipe(gm, splitter, 1), pipe(rawConfig), avroSchemaFile );
+        AvroDecodeStage decoder = new AvroDecodeStage(gm, getOutputPipe(gm, encoder), pipe(busConfig), avroSchemaFile );        
         
-      //  PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, splitter, 2), getOutputPipe(gm, splitter, 1));
+        PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, splitter, 2), getOutputPipe(gm, decoder));
         
         
-        PronghornStage generator1 = new TestGenerator(gm, seed, iterations, pipe(busConfig));        
-        PronghornStage generator2 = new TestGenerator(gm, seed, iterations ,pipe(busConfig));        
+//simple test using split
+//        PronghornStage generator = new TestGenerator(gm, seed, iterations, pipe(busConfig));        
+//        SplitterStage splitter = new SplitterStage(gm, getOutputPipe(gm, generator, 1), pipe(busConfig.grow2x()), pipe(busConfig.grow2x()));       
+//        PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, splitter, 2), getOutputPipe(gm, splitter, 1));
+  
         
-        PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, generator1, 1), getOutputPipe(gm, generator2, 1));
+//simple test with no split        
+//       PronghornStage generator1 = new TestGenerator(gm, seed, iterations, pipe(busConfig));        
+//       PronghornStage generator2 = new TestGenerator(gm, seed, iterations ,pipe(busConfig));       
+//        
+//       PronghornStage validateResults = new TestValidator(gm, getOutputPipe(gm, generator1, 1), getOutputPipe(gm, generator2, 1));
         
         
         
@@ -96,6 +111,54 @@ public class RoundTripTests {
             e.printStackTrace();
         }   
         return null;
+        
+    }
+    
+    @Test
+    public void matchingTestPositive() {
+        
+        FieldReferenceOffsetManager from = buildFROM();      
+        byte primaryRingSizeInBits = 8; 
+        byte byteRingSizeInBits = 18;
+        
+        RingBuffer ring1 = new RingBuffer(new RingBufferConfig(primaryRingSizeInBits, byteRingSizeInBits, null, from));
+        RingBuffer ring2 = new RingBuffer(new RingBufferConfig(primaryRingSizeInBits, byteRingSizeInBits, null, from));
+        
+        ring1.initBuffers();
+        ring2.initBuffers();
+        
+        int commonSeed = 42;         
+        
+        StreamingWriteVisitorGenerator swvg1 = new StreamingWriteVisitorGenerator(from, new Random(commonSeed), 30, 30);        
+        StreamingVisitorWriter svw1 = new StreamingVisitorWriter(ring1, swvg1);
+        
+        StreamingWriteVisitorGenerator swvg2 = new StreamingWriteVisitorGenerator(from, new Random(commonSeed), 30, 30);        
+        StreamingVisitorWriter svw2 = new StreamingVisitorWriter(ring2, swvg2);
+                
+        //now use matcher to confirm the same.
+        StreamingReadVisitorMatcher srvm = new StreamingReadVisitorMatcher(ring1);
+        StreamingVisitorReader svr = new StreamingVisitorReader(ring2, srvm);//new StreamingReadVisitorDebugDelegate(srvm) );
+
+        svw1.startup();
+        svw2.startup();
+        svr.startup();
+        
+        int i = 6;
+        while (--i>=0) {
+            svw1.run();
+            svw2.run();
+            svr.run();
+        }
+        
+        //confirm that both rings contain the exact same thing
+        assertTrue(Arrays.equals(ring1.buffer, ring2.buffer));
+        assertTrue(Arrays.equals(ring1.byteBuffer, ring2.byteBuffer));
+        
+        
+        svr.shutdown();
+        
+        svw1.shutdown();
+        svw2.shutdown();
         
     }
     

@@ -26,7 +26,7 @@ public class AvroDecodeStage extends PronghornStage {
         
         public AvroDecoderVisitor(InputStream inputStream, FieldReferenceOffsetManager from) {
             
-            this.decoder = DecoderFactory.get().directBinaryDecoder(inputStream, null);
+            this.decoder = DecoderFactory.get().binaryDecoder(inputStream, null);
             this.from = from;
             
             if (from.messageStarts.length==1) {
@@ -46,13 +46,16 @@ public class AvroDecodeStage extends PronghornStage {
 
         @Override
         public int pullMessageIdx() {
+            long id = 0;
             try {
-                //use avro union
+                id =  decoder.readLong();
+                //use avro union??
                 
-                long id =  decoder.readLong();
                 return FieldReferenceOffsetManager.lookupTemplateLocator(id, from);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (Throwable e) {
+                e.printStackTrace();
+                return (int)id;
+                //throw new RuntimeException(e);
             }
         }
 

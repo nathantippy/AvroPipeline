@@ -127,6 +127,9 @@ public class AvroEncodeStage extends PronghornStage {
 	    public void visitDecimal(String name, long id, int exp, long mant) {   
 	        
             try {
+                if (exp>64 || exp<-64) {
+                    throw new UnsupportedOperationException("out of range: "+exp);
+                }
                 encoder.writeInt(exp);
                 encoder.writeLong(mant);
             } catch (IOException e) {
@@ -135,10 +138,11 @@ public class AvroEncodeStage extends PronghornStage {
 	        
 	    }
 
+	    //TODO: May want a new visitor that leaves the encoded ASCII/UTF8 data in bytes so we can just pass it on
+	    
 	    @Override
 	    public void visitUTF8(String name, long id, Appendable value) {
             try {
-                //TODO: May want a new visitor that leaves the encoded data in bytes so we can just pass it on
                 encoder.writeString((CharSequence)value);
             } catch (IOException e) {
                throw new RuntimeException(e);
@@ -149,7 +153,6 @@ public class AvroEncodeStage extends PronghornStage {
 	    @Override
 	    public void visitASCII(String name, long id, Appendable value) {
 	        try {
-	            //TODO: May want a new visitor that leaves the encoded data in bytes so we can just pass it on
 	            encoder.writeString((CharSequence)value);
 	        } catch (IOException e) {
 	            throw new RuntimeException(e);
